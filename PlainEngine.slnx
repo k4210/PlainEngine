@@ -1,0 +1,24 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="Core/Core.vcxproj" Id="4d9ddce2-1be4-45a3-94a9-dcb86034d010" />
+  <Project Path="Editor/Editor.vcxproj" Id="c6312220-f20f-4bb9-b7e2-9a1b833ef272" />
+  <Project Path="Engine/Engine.vcxproj" Id="c441a8ed-038d-4146-9711-0e6854ef0f9d" />
+  <Project Path="Game/Game.vcxproj" Id="4b30a73c-d241-4d9b-a4a5-e4302aae2a2a" />
+  <Project Path="GameEditor/GameEditor.vcxproj" Id="94156469-fb6c-4d91-84c7-45fb588e431a" />
+  <Project Path="GameLaunch/GameLaunch.vcxproj" Id="15ed5b11-9d66-4014-985d-a5352a943163" />
+  <Folder Name="/Systems/">
+    <Project Path="Input/Input.vcxproj" Id="cd1d183b-5c51-4a69-b806-4c18a64fc77b" />
+    <Project Path="Renderer/Renderer.vcxproj" Id="c57890a7-6b6d-495d-9ae1-6be34d70a2e1" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/CoreTests/CoreTests.vcxproj" Id="f56a0e4d-434a-4e2d-9040-88f52ef18001" />
+    <Project Path="Tests/RendererTests/RendererTests.vcxproj" Id="f56a0e4d-434a-4e2d-9040-88f52ef18002" />
+    <Project Path="Tests/InputTests/InputTests.vcxproj" Id="f56a0e4d-434a-4e2d-9040-88f52ef18003" />
+    <Project Path="Tests/EngineTests/EngineTests.vcxproj" Id="f56a0e4d-434a-4e2d-9040-88f52ef18004" />
+    <Project Path="Tests/GameTests/GameTests.vcxproj" Id="f56a0e4d-434a-4e2d-9040-88f52ef18005" />
+    <Project Path="Tests/EditorTests/EditorTests.vcxproj" Id="f56a0e4d-434a-4e2d-9040-88f52ef18006" />
+  </Folder>
+</Solution>
