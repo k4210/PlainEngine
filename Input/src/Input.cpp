@@ -1,3 +1,3 @@
-namespace PlainEngine::Input
+namespace PlainEngine
 {
 }

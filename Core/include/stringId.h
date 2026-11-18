@@ -8,26 +8,33 @@
 #include <format>
 #include <string_view>
 
-namespace PlainEngine::Core
+namespace PlainEngine
 {
-    struct StringId final
+    struct StringId
     {
         static constexpr std::size_t kBufferSize = 16;
         static constexpr std::size_t kMaxLength = kBufferSize - 1;
 
-        constexpr StringId() = default;
+        constexpr StringId()
+            : _characters{}
+        {
+        }
 
         template <std::size_t N>
         consteval explicit StringId(const char (&value)[N])
+            : _characters{}
         {
             static_assert(N <= kBufferSize, "StringId literal exceeds 15 characters");
-            for (std::size_t index = 0; index < N - 1; ++index)
+            for (std::size_t index = 0;
+                index < N - 1 && value[index] != '\0';
+                ++index)
             {
                 _characters[index] = value[index];
             }
         }
 
         constexpr explicit StringId(const char* value)
+            : _characters{}
         {
             if (value == nullptr)
             {
@@ -57,30 +64,30 @@ namespace PlainEngine::Core
         friend constexpr auto operator<=>(const StringId&, const StringId&) = default;
 
     private:
-        std::array<char, kBufferSize> _characters{};
+        std::array<char, kBufferSize> _characters;
     };
 }
 
-consteval PlainEngine::Core::StringId operator""_id(
+consteval PlainEngine::StringId operator""_id(
     const char* value,
     std::size_t length)
 {
-    if (length > PlainEngine::Core::StringId::kMaxLength)
+    if (length > PlainEngine::StringId::kMaxLength)
     {
         std::abort();
     }
-    return PlainEngine::Core::StringId{value};
+    return PlainEngine::StringId{value};
 }
 
 namespace std
 {
     template <>
-    struct formatter<PlainEngine::Core::StringId, char>
+    struct formatter<PlainEngine::StringId, char>
         : formatter<string_view, char>
     {
         template <typename FormatContext>
         auto format(
-            const PlainEngine::Core::StringId& value,
+            const PlainEngine::StringId& value,
             FormatContext& context) const
         {
             return formatter<string_view, char>::format(

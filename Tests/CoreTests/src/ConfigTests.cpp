@@ -7,13 +7,13 @@
 #include <gtest/gtest.h>
 #include <variant>
 
-using PlainEngine::Core::Config::Config;
+using PlainEngine::Config;
 
 TEST(ConfigTests, LoadsNumericValuesFromIniFiles)
 {
-    const CoreTests::TemporaryDirectory directory;
+    const PlainEngine::TemporaryDirectory directory;
     std::filesystem::create_directories(directory.path() / "config");
-    ASSERT_TRUE(CoreTests::WriteFile(
+    ASSERT_TRUE(PlainEngine::WriteFile(
         directory.path() / "config" / "settings.ini",
         "; comment\n"
         "[window]\n"

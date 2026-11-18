@@ -7,9 +7,9 @@
 #include <string_view>
 #include <system_error>
 
-namespace CoreTests
+namespace PlainEngine
 {
-    class TemporaryDirectory final
+    class TemporaryDirectory
     {
     public:
         TemporaryDirectory()

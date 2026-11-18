@@ -1,9 +1,11 @@
 #include <stringId.h>
 
+#include <array>
+#include <bit>
 #include <format>
 #include <gtest/gtest.h>
 
-using PlainEngine::Core::StringId;
+using PlainEngine::StringId;
 
 static constexpr StringId kConstexprStringId{"alpha"};
 static_assert("alpha"_id == kConstexprStringId);
@@ -11,6 +13,7 @@ static_assert(kConstexprStringId == StringId{"alpha"});
 static_assert(StringId{"alpha"} == StringId{"alpha"});
 static_assert(StringId{"alpha"} != StringId{"beta"});
 static_assert(StringId{"alpha"} < StringId{"beta"});
+static_assert(StringId{"alpha\0ignored"} == StringId{"alpha"});
 
 TEST(StringIdTests, DefaultValueIsEmpty)
 {
@@ -47,6 +50,19 @@ TEST(StringIdTests, StopsAtEmbeddedNull)
     const StringId id{"alpha\0ignored"};
 
     EXPECT_EQ(id.view(), "alpha");
+    EXPECT_EQ(id, StringId{"alpha"});
+}
+
+TEST(StringIdTests, ZeroFillsUnusedStorage)
+{
+    const StringId id{"alpha"};
+    const auto bytes =
+        std::bit_cast<std::array<char, StringId::kBufferSize>>(id);
+
+    for (std::size_t index = id.view().size(); index < bytes.size(); ++index)
+    {
+        EXPECT_EQ(bytes[index], '\0');
+    }
 }
 
 TEST(StringIdTests, FormatsAsText)

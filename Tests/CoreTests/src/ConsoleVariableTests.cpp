@@ -7,10 +7,10 @@
 #include <gtest/gtest.h>
 #include <type_traits>
 
-using PlainEngine::Core::Config::Config;
-using PlainEngine::Core::ConsoleVariables::ConsoleVariableFloat;
-using PlainEngine::Core::ConsoleVariables::ConsoleVariableInt;
-using PlainEngine::Core::ConsoleVariables::ConsoleVariableManager;
+using PlainEngine::Config;
+using PlainEngine::ConsoleVariableFloat;
+using PlainEngine::ConsoleVariableInt;
+using PlainEngine::ConsoleVariableManager;
 
 static_assert(!std::is_copy_constructible_v<ConsoleVariableInt>);
 static_assert(!std::is_move_constructible_v<ConsoleVariableInt>);
@@ -23,9 +23,9 @@ static_assert(!std::is_move_assignable_v<ConsoleVariableFloat>);
 
 TEST(ConsoleVariableTests, RegistersLoadsConfigAndUsesAtomicValues)
 {
-    const CoreTests::TemporaryDirectory directory;
+    const PlainEngine::TemporaryDirectory directory;
     std::filesystem::create_directories(directory.path() / "config");
-    ASSERT_TRUE(CoreTests::WriteFile(
+    ASSERT_TRUE(PlainEngine::WriteFile(
         directory.path() / "config" / "variables.ini",
         "[render]\n"
         "width = 1920\n"

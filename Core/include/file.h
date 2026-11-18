@@ -8,7 +8,7 @@
 #include <system_error>
 #include <vector>
 
-namespace PlainEngine::Core::FileSystem
+namespace PlainEngine
 {
     Expected<std::vector<std::filesystem::path>, std::error_code> FindFiles(
         const std::filesystem::path& directory,

@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 #include <string>
 
-using PlainEngine::Core::LinearMap;
+using PlainEngine::LinearMap;
 
 TEST(LinearMapTests, InsertsInAnyOrderAndFindsValues)
 {

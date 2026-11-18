@@ -11,6 +11,7 @@
 - Prefer standard-library facilities. Avoid introducing dependencies, backends, or architecture choices without a clear requirement.
 - Use local lambdas for small helpers that capture local state.
 - Append to buffers with post-increment indexing, such as `buffer[length++] = value`.
+- Braces may be omitted for an `if` body that consists only of `return`, `break`, or `continue`; put the keyword on its own indented line.
 - Keep locks scoped to shared-state operations; prepare data before locking and release locks before debugger breaks.
 - Omit whitespace-only changes when showing diffs.
 - Keep Visual Studio project entries and documentation in sync with structural changes. Add tests for behavior when appropriate.

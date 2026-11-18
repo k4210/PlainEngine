@@ -5,10 +5,10 @@
 #include <utility>
 #include <variant>
 
-namespace PlainEngine::Core
+namespace PlainEngine
 {
     template <typename E>
-    class Unexpected final
+    class Unexpected
     {
     public:
         constexpr explicit Unexpected(E error)
@@ -45,7 +45,7 @@ namespace PlainEngine::Core
     }
 
     template <typename T, typename E>
-    class Expected final
+    class Expected
     {
     public:
         constexpr Expected()
@@ -145,7 +145,7 @@ namespace PlainEngine::Core
     };
 
     template <typename E>
-    class Expected<void, E> final
+    class Expected<void, E>
     {
     public:
         constexpr Expected() = default;

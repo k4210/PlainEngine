@@ -1,3 +1,3 @@
-namespace PlainEngine::Editor
+namespace PlainEngine
 {
 }

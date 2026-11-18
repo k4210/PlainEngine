@@ -1,3 +1,3 @@
-namespace PlainEngine::Game
+namespace PlainEngine
 {
 }

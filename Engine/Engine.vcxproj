@@ -19,7 +19,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration"><ConfigurationType>StaticLibrary</ConfigurationType><UseDebugLibraries>false</UseDebugLibraries><PlatformToolset>v145</PlatformToolset><WholeProgramOptimization>true</WholeProgramOptimization></PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ItemGroup>
-    <ClCompile Include="src\Engine.cpp" />
+    <ClInclude Include="include\engine.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\engine.cpp" />
   </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile><AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)..\Core\include;$(ProjectDir)..\Renderer\include;$(ProjectDir)..\Input\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories></ClCompile>

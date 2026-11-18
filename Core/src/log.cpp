@@ -16,7 +16,7 @@
 #include <string_view>
 #include <utility>
 
-namespace PlainEngine::Core::detail
+namespace PlainEngine
 {
     namespace
     {

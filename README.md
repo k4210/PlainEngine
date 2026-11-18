@@ -48,6 +48,8 @@ executables can be built individually or discovered and run from Test Explorer.
 Core logging provides `Log`, `Info`, `Warning`, `Error`, and `Break` with
 `std::format`-style arguments and optional `StringId` channels, written as
 `"channel"_id`. Messages are formatted into a fixed buffer; oversized messages are truncated.
+Conditional variants (`CLog`, `CInfo`, `CWarning`, `CError`, and `CBreak`)
+take a leading `bool` and do nothing when it is false.
 Warnings use yellow console text; errors and break messages use red. `Break`
 flushes its message before triggering a debugger break. Logging is enabled by
 default; defining `LOG_ENABLED=0` compiles logging calls and their arguments out.
@@ -55,21 +57,21 @@ default; defining `LOG_ENABLED=0` compiles logging calls and their arguments out
 Core provides a C++20 `Expected<T, E>` result type, with `Unexpected<E>` for
 errors. Check `has_value()` or the boolean conversion before accessing
 `value()` or `error()`; invalid access is asserted because production code
-does not use exceptions. File utilities in `PlainEngine::Core::FileSystem`
+does not use exceptions. File utilities in `PlainEngine`
 use this type for extension-filtered directory iteration and text or binary
 reads, carrying failures as `std::error_code`. Their public declarations
 contain no platform-specific headers.
 
-`PlainEngine::Core::LinearMap<Key, Value>` stores sorted keys and corresponding
+`PlainEngine::LinearMap<Key, Value>` stores sorted keys and corresponding
 values in parallel vectors, providing ordered insertion and binary-search lookup
 for maps with a small number of entries.
 
-`PlainEngine::Core::Config::Config::Read` reads `.ini` files from a relative
+`PlainEngine::Config::Read` reads `.ini` files from a relative
 folder path and returns a `Config` value. Its `find` method retrieves integer
 or floating-point values by filename without its `.ini` extension, section,
 and key.
 
-Console variables in `PlainEngine::Core::ConsoleVariables` register with
+Console variables in `PlainEngine` register with
 `ConsoleVariableManager::Get()` at construction and can be initialized with a
 `Config` value. Define them with global storage duration and keep them at a
 stable address; C++ cannot enforce global storage duration, so the variable

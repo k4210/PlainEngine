@@ -3,11 +3,10 @@
 #include <config.h>
 #include <log.h>
 
-#include <algorithm>
 #include <mutex>
 #include <variant>
 
-namespace PlainEngine::Core::ConsoleVariables
+namespace PlainEngine
 {
     ConsoleVariableBase::ConsoleVariableBase(
         ConsoleVariableType type)
@@ -46,7 +45,7 @@ namespace PlainEngine::Core::ConsoleVariables
         _value.store(newValue, std::memory_order_relaxed);
     }
 
-    bool ConsoleVariableInt::trySet(const Config::AnyValue& value)
+    bool ConsoleVariableInt::trySet(const ConfigValue& value)
     {
         if (const int* integerValue = std::get_if<int>(&value))
         {
@@ -83,7 +82,7 @@ namespace PlainEngine::Core::ConsoleVariables
         _value.store(newValue, std::memory_order_relaxed);
     }
 
-    bool ConsoleVariableFloat::trySet(const Config::AnyValue& value)
+    bool ConsoleVariableFloat::trySet(const ConfigValue& value)
     {
         if (const float* floatingPointValue = std::get_if<float>(&value))
         {
@@ -112,20 +111,14 @@ namespace PlainEngine::Core::ConsoleVariables
         StringId key,
         ConsoleVariableBase& variable)
     {
-        const ConsoleVariableKey variableKey{file, section, key};
+        const ConfigKey variableKey{file, section, key};
         bool isDuplicate = false;
         {
             const std::unique_lock lock{_mutex};
-            const auto existing = std::find_if(
-                _variables.begin(),
-                _variables.end(),
-                [&variableKey](const Entry& entry)
-                {
-                    return entry.key == variableKey;
-                });
+            const auto existing = _variables.find(variableKey);
             if (existing != _variables.end())
             {
-                if (existing->variable == &variable)
+                if (existing->second == &variable)
                 {
                     return;
                 }
@@ -134,7 +127,7 @@ namespace PlainEngine::Core::ConsoleVariables
             }
             else
             {
-                _variables.push_back(Entry{variableKey, &variable});
+                _variables.emplace(variableKey, &variable);
             }
         }
         if (isDuplicate)
@@ -154,21 +147,15 @@ namespace PlainEngine::Core::ConsoleVariables
         StringId key) const
     {
         const std::shared_lock lock{_mutex};
-        const ConsoleVariableKey variableKey{file, section, key};
-        const auto found = std::find_if(
-            _variables.begin(),
-            _variables.end(),
-            [&variableKey](const Entry& entry)
-            {
-                return entry.key == variableKey;
-            });
+        const ConfigKey variableKey{file, section, key};
+        const auto found = _variables.find(variableKey);
         if (found == _variables.end() ||
-            found->variable->_type != ConsoleVariableType::integer)
+            found->second->_type != ConsoleVariableType::integer)
         {
             return nullptr;
         }
 
-        return static_cast<ConsoleVariableInt*>(found->variable);
+        return static_cast<ConsoleVariableInt*>(found->second);
     }
 
     ConsoleVariableFloat* ConsoleVariableManager::findFloat(
@@ -177,38 +164,32 @@ namespace PlainEngine::Core::ConsoleVariables
         StringId key) const
     {
         const std::shared_lock lock{_mutex};
-        const ConsoleVariableKey variableKey{file, section, key};
-        const auto found = std::find_if(
-            _variables.begin(),
-            _variables.end(),
-            [&variableKey](const Entry& entry)
-            {
-                return entry.key == variableKey;
-            });
+        const ConfigKey variableKey{file, section, key};
+        const auto found = _variables.find(variableKey);
         if (found == _variables.end() ||
-            found->variable->_type != ConsoleVariableType::floatingPoint)
+            found->second->_type != ConsoleVariableType::floatingPoint)
         {
             return nullptr;
         }
 
-        return static_cast<ConsoleVariableFloat*>(found->variable);
+        return static_cast<ConsoleVariableFloat*>(found->second);
     }
 
-    void ConsoleVariableManager::useConfig(const Config::Config& config)
+    void ConsoleVariableManager::useConfig(const Config& config)
     {
         const std::shared_lock lock{_mutex};
-        for (const Entry& entry : _variables)
+        for (const auto& [key, variable] : _variables)
         {
             const auto value = config.find(
-                entry.key.file, entry.key.section, entry.key.key);
-            if (value && !entry.variable->trySet(*value))
+                key.file, key.section, key.key);
+            if (value && !variable->trySet(*value))
             {
                 Warning(
                     "ConsoleVar"_id,
                     "Config value [{}][{}][{}] has an incompatible type",
-                    entry.key.file,
-                    entry.key.section,
-                    entry.key.key);
+                    key.file,
+                    key.section,
+                    key.key);
             }
         }
     }
@@ -219,9 +200,9 @@ namespace PlainEngine::Core::ConsoleVariables
         const std::unique_lock lock{_mutex};
         std::erase_if(
             _variables,
-            [&variable](const Entry& entry)
+            [&variable](const auto& entry)
             {
-                return entry.variable == &variable;
+                return entry.second == &variable;
             });
     }
 }

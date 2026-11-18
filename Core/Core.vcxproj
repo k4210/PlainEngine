@@ -26,12 +26,12 @@
     <ClInclude Include="include\expected.h" />
     <ClInclude Include="include\file.h" />
     <ClInclude Include="include\config.h" />
+    <ClInclude Include="include\hash.h" />
     <ClInclude Include="include\linearMap.h" />
     <ClInclude Include="include\log.h" />
     <ClInclude Include="include\stringId.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Core.cpp" />
     <ClCompile Include="src\consoleVariables.cpp">
       <DisableSpecificWarnings>4530</DisableSpecificWarnings>
     </ClCompile>

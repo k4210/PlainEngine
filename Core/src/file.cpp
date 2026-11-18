@@ -5,7 +5,7 @@
 #include <limits>
 #include <string>
 
-namespace PlainEngine::Core::FileSystem
+namespace PlainEngine
 {
     namespace
     {

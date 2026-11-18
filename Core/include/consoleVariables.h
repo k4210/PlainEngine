@@ -3,23 +3,11 @@
 #include <config.h>
 
 #include <atomic>
-#include <compare>
 #include <shared_mutex>
-#include <vector>
+#include <unordered_map>
 
-namespace PlainEngine::Core::ConsoleVariables
+namespace PlainEngine
 {
-    struct ConsoleVariableKey final
-    {
-        StringId file;
-        StringId section;
-        StringId key;
-
-        friend constexpr auto operator<=>(
-            const ConsoleVariableKey&,
-            const ConsoleVariableKey&) = default;
-    };
-
     enum class ConsoleVariableType
     {
         integer,
@@ -46,7 +34,7 @@ namespace PlainEngine::Core::ConsoleVariables
     private:
         friend class ConsoleVariableManager;
 
-        virtual bool trySet(const Config::AnyValue& value) = 0;
+        virtual bool trySet(const ConfigValue& value) = 0;
 
         ConsoleVariableType _type;
     };
@@ -66,7 +54,7 @@ namespace PlainEngine::Core::ConsoleVariables
         void set(int newValue);
 
     private:
-        bool trySet(const Config::AnyValue& value) override;
+        bool trySet(const ConfigValue& value) override;
 
         std::atomic<int> _value;
     };
@@ -86,12 +74,12 @@ namespace PlainEngine::Core::ConsoleVariables
         void set(float newValue);
 
     private:
-        bool trySet(const Config::AnyValue& value) override;
+        bool trySet(const ConfigValue& value) override;
 
         std::atomic<float> _value;
     };
 
-    class ConsoleVariableManager final
+    class ConsoleVariableManager
     {
     public:
         static ConsoleVariableManager& Get();
@@ -117,20 +105,14 @@ namespace PlainEngine::Core::ConsoleVariables
             StringId section,
             StringId key) const;
 
-        void useConfig(const Config::Config& config);
+        void useConfig(const Config& config);
 
     private:
-        struct Entry final
-        {
-            ConsoleVariableKey key;
-            ConsoleVariableBase* variable;
-        };
-
         ConsoleVariableManager() = default;
         void unregisterVariable(ConsoleVariableBase& variable);
 
         mutable std::shared_mutex _mutex;
-        std::vector<Entry> _variables;
+        std::unordered_map<ConfigKey, ConsoleVariableBase*> _variables;
 
         friend class ConsoleVariableInt;
         friend class ConsoleVariableFloat;

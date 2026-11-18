@@ -6,10 +6,10 @@
 #include <utility>
 #include <vector>
 
-namespace PlainEngine::Core
+namespace PlainEngine
 {
     template <typename Key, typename Value>
-    class LinearMap final
+    class LinearMap
     {
     public:
         Value& findOrAdd(Key key, bool* alreadyExisted = nullptr)

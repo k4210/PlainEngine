@@ -7,17 +7,17 @@
 #include <gtest/gtest.h>
 #include <string_view>
 
-using PlainEngine::Core::FileSystem::FindFiles;
-using PlainEngine::Core::FileSystem::ReadBinaryFile;
-using PlainEngine::Core::FileSystem::ReadTextFile;
+using PlainEngine::FindFiles;
+using PlainEngine::ReadBinaryFile;
+using PlainEngine::ReadTextFile;
 
 TEST(FileTests, FindsFilesByExtensionWithOptionalRecursion)
 {
-    const CoreTests::TemporaryDirectory directory;
+    const PlainEngine::TemporaryDirectory directory;
     std::filesystem::create_directories(directory.path() / "nested");
-    ASSERT_TRUE(CoreTests::WriteFile(directory.path() / "root.txt", "root"));
-    ASSERT_TRUE(CoreTests::WriteFile(directory.path() / "root.bin", "binary"));
-    ASSERT_TRUE(CoreTests::WriteFile(
+    ASSERT_TRUE(PlainEngine::WriteFile(directory.path() / "root.txt", "root"));
+    ASSERT_TRUE(PlainEngine::WriteFile(directory.path() / "root.bin", "binary"));
+    ASSERT_TRUE(PlainEngine::WriteFile(
         directory.path() / "nested" / "nested.txt", "nested"));
 
     const auto rootFiles = FindFiles(directory.path(), ".txt");
@@ -32,14 +32,14 @@ TEST(FileTests, FindsFilesByExtensionWithOptionalRecursion)
 
 TEST(FileTests, ReadsTextAndBinaryContents)
 {
-    const CoreTests::TemporaryDirectory directory;
+    const PlainEngine::TemporaryDirectory directory;
     const auto textPath = directory.path() / "text.txt";
     const auto binaryPath = directory.path() / "binary.bin";
     const auto emptyPath = directory.path() / "empty.txt";
-    ASSERT_TRUE(CoreTests::WriteFile(textPath, "first line\nsecond line"));
-    ASSERT_TRUE(CoreTests::WriteFile(emptyPath, std::string_view{}));
+    ASSERT_TRUE(PlainEngine::WriteFile(textPath, "first line\nsecond line"));
+    ASSERT_TRUE(PlainEngine::WriteFile(emptyPath, std::string_view{}));
     const char binaryContents[]{'\0', '\x01', '\x7f', static_cast<char>(0xff)};
-    ASSERT_TRUE(CoreTests::WriteFile(
+    ASSERT_TRUE(PlainEngine::WriteFile(
         binaryPath, std::string_view{binaryContents, sizeof(binaryContents)}));
 
     const auto text = ReadTextFile(textPath);
@@ -62,7 +62,7 @@ TEST(FileTests, ReadsTextAndBinaryContents)
 
 TEST(FileTests, ReportsReadAndSearchErrors)
 {
-    const CoreTests::TemporaryDirectory directory;
+    const PlainEngine::TemporaryDirectory directory;
     const auto text = ReadTextFile(directory.path() / "missing.txt");
     ASSERT_FALSE(text);
     EXPECT_TRUE(text.error());

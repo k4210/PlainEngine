@@ -3,6 +3,8 @@
 
 #include <gtest/gtest.h>
 
+using namespace PlainEngine;
+
 TEST(LogTests, FormatsWithAndWithoutChannel)
 {
     Log("Core"_id, "value {}", 42);

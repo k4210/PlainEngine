@@ -1,7 +1,6 @@
 #include <config.h>
 
 #include <file.h>
-#include <linearMap.h>
 #include <log.h>
 
 #include <charconv>
@@ -12,7 +11,7 @@
 #include <string_view>
 #include <system_error>
 
-namespace PlainEngine::Core::Config
+namespace PlainEngine
 {
     namespace
     {
@@ -46,7 +45,7 @@ namespace PlainEngine::Core::Config
             return true;
         }
 
-        std::optional<AnyValue> ParseNumericValue(std::string_view value)
+        std::optional<ConfigValue> ParseNumericValue(std::string_view value)
         {
             int integerValue = 0;
             const auto integerResult = std::from_chars(
@@ -72,8 +71,9 @@ namespace PlainEngine::Core::Config
         }
 
         void ParseConfigFile(
+            StringId file,
             std::string_view content,
-            Config::Sections& sections)
+            std::unordered_map<ConfigKey, ConfigValue>& records)
         {
             StringId currentSection;
             bool currentSectionIsValid = true;
@@ -122,10 +122,12 @@ namespace PlainEngine::Core::Config
                     continue;
                 }
 
-                const std::optional<AnyValue> anyValue = ParseNumericValue(value);
-                if (anyValue)
+                const std::optional<ConfigValue> configValue =
+                    ParseNumericValue(value);
+                if (configValue)
                 {
-                    sections.findOrAdd(currentSection).findOrAdd(key) = *anyValue;
+                    records.insert_or_assign(
+                        ConfigKey{file, currentSection, key}, *configValue);
                 }
             }
         }
@@ -135,7 +137,7 @@ namespace PlainEngine::Core::Config
     Config Config::Read(std::string_view relativeFolderPath)
     {
         Config config;
-        const auto paths = FileSystem::FindFiles(
+        const auto paths = FindFiles(
             std::filesystem::path{relativeFolderPath}, ".ini");
         if (!paths)
         {
@@ -160,7 +162,7 @@ namespace PlainEngine::Core::Config
                 continue;
             }
 
-            const auto content = FileSystem::ReadTextFile(path);
+            const auto content = ReadTextFile(path);
             if (!content)
             {
                 Error(
@@ -171,29 +173,23 @@ namespace PlainEngine::Core::Config
                 return Config{};
             }
 
-            ParseConfigFile(*content, config._files.findOrAdd(fileId));
+            ParseConfigFile(fileId, *content, config._records);
         }
 
         return config;
     }
 
-    std::optional<AnyValue> Config::find(
+    std::optional<ConfigValue> Config::find(
         StringId filename,
         StringId section,
         StringId key) const
     {
-        const auto file = _files.find(filename);
-        if (!file)
+        const auto value = _records.find(ConfigKey{filename, section, key});
+        if (value == _records.end())
         {
             return std::nullopt;
         }
 
-        const auto values = file->find(section);
-        if (!values)
-        {
-            return std::nullopt;
-        }
-
-        return values->find(key);
+        return value->second;
     }
 }
