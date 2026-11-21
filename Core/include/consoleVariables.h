@@ -1,10 +1,39 @@
 #pragma once
 
-#include <config.h>
+#include "config.h"
+#include "hash.h"
 
 #include <atomic>
 #include <shared_mutex>
 #include <unordered_map>
+
+namespace PlainEngine
+{
+    struct CVarKey
+    {
+        StringId file;
+        StringId section;
+        StringId key;
+
+        friend bool operator==(const CVarKey&, const CVarKey&) = default;
+    };
+}
+
+namespace std
+{
+    template <>
+    struct hash<PlainEngine::CVarKey>
+    {
+        size_t operator()(const PlainEngine::CVarKey& key) const
+        {
+            size_t seed = 0;
+            PlainEngine::hash_combine(seed, key.file.view());
+            PlainEngine::hash_combine(seed, key.section.view());
+            PlainEngine::hash_combine(seed, key.key.view());
+            return seed;
+        }
+    };
+}
 
 namespace PlainEngine
 {
@@ -112,7 +141,7 @@ namespace PlainEngine
         void unregisterVariable(ConsoleVariableBase& variable);
 
         mutable std::shared_mutex _mutex;
-        std::unordered_map<ConfigKey, ConsoleVariableBase*> _variables;
+        std::unordered_map<CVarKey, ConsoleVariableBase*> _variables;
 
         friend class ConsoleVariableInt;
         friend class ConsoleVariableFloat;

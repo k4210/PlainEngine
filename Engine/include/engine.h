@@ -1,6 +1,6 @@
 #pragma once
 
-#include <config.h>
+#include "config.h"
 
 namespace PlainEngine
 {
@@ -10,6 +10,8 @@ namespace PlainEngine
         void initialize();
 
     private:
+        static void ConfigLogsUnsafe(const Config& config);
+
         Config _config;
     };
 }

@@ -1,4 +1,4 @@
-#include <config.h>
+#include "config.h"
 #include "stringId.h"
 
 #include "TestFileHelpers.h"
@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <gtest/gtest.h>
 #include <variant>
+#include <vector>
 
 using PlainEngine::Config;
 
@@ -39,6 +40,23 @@ TEST(ConfigTests, LoadsNumericValuesFromIniFiles)
     const auto volume = config.find("settings"_id, "audio"_id, "volume"_id);
     ASSERT_TRUE(volume);
     EXPECT_FLOAT_EQ(std::get<float>(*volume), 0.75f);
+
+    std::vector<PlainEngine::StringId> sectionNames;
+    config.forEachSection(
+        "settings"_id,
+        [&sectionNames](PlainEngine::StringId name, const Config::Section& section)
+        {
+            sectionNames.push_back(name);
+            if (name == "window"_id)
+            {
+                const Config::Record* width = section.findRecord("width"_id);
+                ASSERT_NE(width, nullptr);
+                EXPECT_EQ(std::get<int>(width->value), 1280);
+            }
+        });
+    ASSERT_EQ(sectionNames.size(), 2);
+    EXPECT_EQ(sectionNames[0], "window"_id);
+    EXPECT_EQ(sectionNames[1], "audio"_id);
 
     EXPECT_FALSE(config.find("settings"_id, "window"_id, "invalid"_id));
     EXPECT_FALSE(config.find("settings.ini"_id, "window"_id, "width"_id));

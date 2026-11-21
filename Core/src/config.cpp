@@ -1,7 +1,7 @@
-#include <config.h>
+#include "config.h"
 
-#include <file.h>
-#include <log.h>
+#include "file.h"
+#include "log.h"
 
 #include <charconv>
 #include <cctype>
@@ -70,68 +70,128 @@ namespace PlainEngine
             return std::nullopt;
         }
 
-        void ParseConfigFile(
-            StringId file,
-            std::string_view content,
-            std::unordered_map<ConfigKey, ConfigValue>& records)
+    }
+
+    const Config::Record* Config::Section::findRecord(StringId recordName) const
+    {
+        for (const Record& record : records)
         {
-            StringId currentSection;
-            bool currentSectionIsValid = true;
-            std::size_t lineStart = 0;
-            while (lineStart < content.size())
+            if (record.name == recordName)
             {
-                const std::size_t lineEnd = content.find('\n', lineStart);
-                const std::size_t length = lineEnd == std::string_view::npos
-                    ? content.size() - lineStart
-                    : lineEnd - lineStart;
-                const std::string_view line = Trim(content.substr(lineStart, length));
-                lineStart = lineEnd == std::string_view::npos
-                    ? content.size()
-                    : lineEnd + 1;
-
-                if (line.empty() || line.front() == ';' || line.front() == '#')
-                {
-                    continue;
-                }
-
-                if (line.front() == '[' && line.back() == ']')
-                {
-                    const std::string_view sectionName =
-                        Trim(line.substr(1, line.size() - 2));
-                    currentSectionIsValid =
-                        MakeStringId(sectionName, currentSection);
-                    continue;
-                }
-
-                if (!currentSectionIsValid)
-                {
-                    continue;
-                }
-
-                const std::size_t separator = line.find('=');
-                if (separator == std::string_view::npos)
-                {
-                    continue;
-                }
-
-                const std::string_view keyName = Trim(line.substr(0, separator));
-                const std::string_view value = Trim(line.substr(separator + 1));
-                StringId key;
-                if (keyName.empty() || !MakeStringId(keyName, key))
-                {
-                    continue;
-                }
-
-                const std::optional<ConfigValue> configValue =
-                    ParseNumericValue(value);
-                if (configValue)
-                {
-                    records.insert_or_assign(
-                        ConfigKey{file, currentSection, key}, *configValue);
-                }
+                return &record;
             }
         }
+        return nullptr;
+    }
 
+    const Config::Section* Config::FileData::findSection(StringId sectionName) const
+    {
+        for (const Section& section : sections)
+        {
+            if (section.name == sectionName)
+            {
+                return &section;
+            }
+        }
+        return nullptr;
+    }
+
+    void Config::ParseConfigFile(FileData& file, std::string_view content)
+    {
+        StringId currentSectionName;
+        Section* currentSection = nullptr;
+        bool currentSectionIsValid = true;
+        std::size_t lineStart = 0;
+        while (lineStart < content.size())
+        {
+            const std::size_t lineEnd = content.find('\n', lineStart);
+            const std::size_t length = lineEnd == std::string_view::npos
+                ? content.size() - lineStart
+                : lineEnd - lineStart;
+            const std::string_view line = Trim(content.substr(lineStart, length));
+            lineStart = lineEnd == std::string_view::npos
+                ? content.size()
+                : lineEnd + 1;
+
+            if (line.empty() || line.front() == ';' || line.front() == '#')
+            {
+                continue;
+            }
+
+            if (line.front() == '[' && line.back() == ']')
+            {
+                const std::string_view sectionName =
+                    Trim(line.substr(1, line.size() - 2));
+                currentSectionIsValid =
+                    MakeStringId(sectionName, currentSectionName);
+                currentSection = nullptr;
+                continue;
+            }
+
+            if (!currentSectionIsValid)
+            {
+                continue;
+            }
+
+            const std::size_t separator = line.find('=');
+            if (separator == std::string_view::npos)
+            {
+                continue;
+            }
+
+            const std::string_view keyName = Trim(line.substr(0, separator));
+            const std::string_view value = Trim(line.substr(separator + 1));
+            StringId key;
+            if (keyName.empty() || !MakeStringId(keyName, key))
+            {
+                continue;
+            }
+
+            const std::optional<ConfigValue> configValue =
+                ParseNumericValue(value);
+            if (!configValue)
+            {
+                continue;
+            }
+
+            if (currentSection == nullptr)
+            {
+                for (Section& section : file.sections)
+                {
+                    if (section.name == currentSectionName)
+                    {
+                        currentSection = &section;
+                        break;
+                    }
+                }
+
+                if (currentSection == nullptr)
+                {
+                    file.sections.emplace_back();
+                    currentSection = &file.sections.back();
+                    currentSection->name = currentSectionName;
+                }
+            }
+
+            Record* record = nullptr;
+            for (Record& existing : currentSection->records)
+            {
+                if (existing.name == key)
+                {
+                    record = &existing;
+                    break;
+                }
+            }
+
+            if (record != nullptr)
+            {
+                record->value = *configValue;
+            }
+            else
+            {
+                currentSection->records.push_back({key, *configValue});
+            }
+        }
     }
 
     Config Config::Read(std::string_view relativeFolderPath)
@@ -162,6 +222,12 @@ namespace PlainEngine
                 continue;
             }
 
+            Assert(config._fileCount < config._files.size());
+            if (config._fileCount >= config._files.size())
+            {
+                return config;
+            }
+
             const auto content = ReadTextFile(path);
             if (!content)
             {
@@ -173,7 +239,9 @@ namespace PlainEngine
                 return Config{};
             }
 
-            ParseConfigFile(fileId, *content, config._records);
+            FileData& file = config._files[config._fileCount++];
+            file.name = fileId;
+            ParseConfigFile(file, *content);
         }
 
         return config;
@@ -184,12 +252,46 @@ namespace PlainEngine
         StringId section,
         StringId key) const
     {
-        const auto value = _records.find(ConfigKey{filename, section, key});
-        if (value == _records.end())
+        for (std::size_t index = 0; index < _fileCount; ++index)
         {
-            return std::nullopt;
+            const FileData& file = _files[index];
+            if (file.name != filename)
+            {
+                continue;
+            }
+
+            const Section* foundSection = file.findSection(section);
+            if (foundSection == nullptr)
+            {
+                return std::nullopt;
+            }
+
+            const Record* record = foundSection->findRecord(key);
+            return record != nullptr
+                ? std::optional<ConfigValue>{record->value}
+                : std::nullopt;
         }
 
-        return value->second;
+        return std::nullopt;
+    }
+
+    void Config::forEachSection(
+        StringId fileName,
+        std::function<void(StringId, const Section&)> func) const
+    {
+        for (std::size_t index = 0; index < _fileCount; ++index)
+        {
+            const FileData& file = _files[index];
+            if (file.name != fileName)
+            {
+                continue;
+            }
+
+            for (const Section& section : file.sections)
+            {
+                func(section.name, section);
+            }
+            return;
+        }
     }
 }

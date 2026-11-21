@@ -16,16 +16,17 @@
 
 namespace PlainEngine
 {
+    struct Config;
+
     inline constexpr std::size_t kLogBufferSize = 2048;
-    inline constexpr char kLogTruncationMarker[] = "...";
 
 	enum class LogPriority : uint8_t
     {
-        log,
-        info,
-        warning,
-        error,
-        breakExecution
+        log = 0,
+        info = 1,
+        warning = 2,
+        error = 4,
+        breakExecution = 5
     };
 
     std::size_t AppendLogPrefix(
@@ -35,13 +36,52 @@ namespace PlainEngine
 
     std::size_t AppendStackTrace(std::array<char, kLogBufferSize>& buffer, std::size_t length);
 
+    std::size_t ApplyTruncationMarker(
+        std::array<char, kLogBufferSize>& buffer,
+        std::size_t startOffset,
+        std::size_t available);
+
+    template <typename... Args>
+    std::size_t AppendArgs(
+        std::array<char, kLogBufferSize>& buffer,
+        std::size_t startOffset,
+        std::size_t requiredFreeSpace,
+        std::format_string<Args...> format,
+        Args&&... args)
+    {
+        if (requiredFreeSpace >= kLogBufferSize)
+        {
+            return startOffset;
+        }
+
+        const std::size_t usableLength = kLogBufferSize - requiredFreeSpace;
+        if (startOffset >= usableLength)
+        {
+            return startOffset;
+        }
+
+        const std::size_t available = usableLength - startOffset;
+        const auto result = std::format_to_n(
+            buffer.data() + startOffset,
+            available,
+            format,
+            std::forward<Args>(args)...);
+        const std::size_t formattedLength = static_cast<std::size_t>(result.size);
+
+        if (formattedLength > available)
+        {
+            return ApplyTruncationMarker(buffer, startOffset, available);
+        }
+
+        return startOffset + formattedLength;
+    }
+
     void WriteLogMessage(LogPriority priority, const char* message, std::size_t length);
 
     struct LogSettings
     {
-        // Changing a channel's minimum priority is not thread-safe.
-        static void minimalPriority(StringId channel, LogPriority priority);
-        static LogPriority minimalPriority(StringId channel);
+        static void SetMinimalPriorityUnsafe(StringId channel, LogPriority priority);
+        static LogPriority MinimalPriority(StringId channel);
     };
 
     template <typename... Args>
@@ -51,33 +91,19 @@ namespace PlainEngine
         std::format_string<Args...> format,
         Args&&... args)
     {
-        if (priority < LogSettings::minimalPriority(channel))
+        if (priority < LogSettings::MinimalPriority(channel))
             return;
 
         std::array<char, kLogBufferSize> buffer{};
-        std::size_t length = AppendLogPrefix(channel, priority, buffer);
-        {
-            const std::size_t kCapacity = buffer.size() - length - 2;
-            const auto result = std::format_to_n(
-                buffer.data() + length, kCapacity, format,
-                std::forward<Args>(args)...);
-            const std::size_t formattedLength = static_cast<std::size_t>(result.size);
-            std::size_t messageLength = formattedLength < kCapacity ? formattedLength : kCapacity;
+        const std::size_t prefixLength = AppendLogPrefix(channel, priority, buffer);
+        std::size_t length = AppendArgs(
+            buffer,
+            prefixLength,
+            2,
+            format,
+            std::forward<Args>(args)...);
+        buffer[length++] = '\n';
 
-            if (formattedLength > kCapacity)
-            {
-                constexpr std::size_t kMarkerSize = sizeof(kLogTruncationMarker) - 1;
-                for (std::size_t index = 0; index < kMarkerSize; ++index)
-                {
-                    buffer[length + kCapacity - kMarkerSize + index] =
-                        kLogTruncationMarker[index];
-                }
-                messageLength = kCapacity;
-            }
-
-            buffer[length + messageLength] = '\n';
-            length += messageLength + 1;
-        }
         if (priority == LogPriority::breakExecution)
         {
             length = AppendStackTrace(buffer, length);

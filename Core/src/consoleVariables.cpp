@@ -1,7 +1,7 @@
-#include <consoleVariables.h>
+#include "consoleVariables.h"
 
-#include <config.h>
-#include <log.h>
+#include "config.h"
+#include "log.h"
 
 #include <mutex>
 #include <variant>
@@ -111,7 +111,7 @@ namespace PlainEngine
         StringId key,
         ConsoleVariableBase& variable)
     {
-        const ConfigKey variableKey{file, section, key};
+        const CVarKey variableKey{file, section, key};
         bool isDuplicate = false;
         {
             const std::unique_lock lock{_mutex};
@@ -147,7 +147,7 @@ namespace PlainEngine
         StringId key) const
     {
         const std::shared_lock lock{_mutex};
-        const ConfigKey variableKey{file, section, key};
+        const CVarKey variableKey{file, section, key};
         const auto found = _variables.find(variableKey);
         if (found == _variables.end() ||
             found->second->_type != ConsoleVariableType::integer)
@@ -164,7 +164,7 @@ namespace PlainEngine
         StringId key) const
     {
         const std::shared_lock lock{_mutex};
-        const ConfigKey variableKey{file, section, key};
+        const CVarKey variableKey{file, section, key};
         const auto found = _variables.find(variableKey);
         if (found == _variables.end() ||
             found->second->_type != ConsoleVariableType::floatingPoint)

@@ -1,4 +1,4 @@
-#include <log.h>
+#include "log.h"
 
 #if LOG_ENABLED
 
@@ -76,18 +76,38 @@ namespace PlainEngine
         }
     }
 
-    void LogSettings::minimalPriority(StringId channel, LogPriority priority)
+    void LogSettings::SetMinimalPriorityUnsafe(StringId channel, LogPriority priority)
     {
         GetMinimumPriorities()[channel] = priority;
     }
 
-    LogPriority LogSettings::minimalPriority(StringId channel)
+    LogPriority LogSettings::MinimalPriority(StringId channel)
     {
         const auto& minimumPriorities = GetMinimumPriorities();
         const auto setting = minimumPriorities.find(channel);
         return setting == minimumPriorities.end()
             ? LogPriority::log
             : setting->second;
+    }
+
+    std::size_t ApplyTruncationMarker(
+        std::array<char, kLogBufferSize>& buffer,
+        std::size_t startOffset,
+        std::size_t available)
+    {
+        const std::string_view kTruncationMarker{"..."};
+
+        const std::size_t markerSize = available < kTruncationMarker.size()
+            ? available
+            : kTruncationMarker.size();
+        const std::size_t markerStart = startOffset + available - markerSize;
+
+        for (std::size_t index = 0; index < markerSize; ++index)
+        {
+            buffer[markerStart + index] = kTruncationMarker[index];
+        }
+
+        return startOffset + available;
     }
 
     std::size_t AppendStackTrace(std::array<char, kLogBufferSize>& output, std::size_t outputLength)
@@ -104,27 +124,17 @@ namespace PlainEngine
 
         const auto appendText = [&output, &outputLength](std::string_view text)
         {
-            constexpr std::string_view kTruncationMarker{kLogTruncationMarker};
             const std::size_t available = output.size() - outputLength - 1;
             if (text.size() > available)
             {
-                if (available >= kTruncationMarker.size())
+                const std::size_t startOffset = outputLength;
+                for (std::size_t index = 0; index < available; ++index)
                 {
-                    const std::size_t copiedLength = available - kTruncationMarker.size();
-                    for (std::size_t index = 0; index < copiedLength; ++index)
-                    {
-                        output[outputLength++] = text[index];
-                    }
-                }
-                else
-                {
-                    outputLength = output.size() - kTruncationMarker.size() - 1;
+                    output[outputLength++] = text[index];
                 }
 
-                for (const char character : kTruncationMarker)
-                {
-                    output[outputLength++] = character;
-                }
+                outputLength = ApplyTruncationMarker(
+                    output, startOffset, available);
                 return false;
             }
 

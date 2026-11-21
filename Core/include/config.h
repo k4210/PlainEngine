@@ -1,48 +1,52 @@
 #pragma once
 
+#include <array>
+#include <cstddef>
+#include <functional>
 #include <optional>
 #include <string_view>
-#include <unordered_map>
 #include <variant>
+#include <vector>
 
 #include "stringId.h"
-#include "hash.h"
 
 namespace PlainEngine
 {
     using ConfigValue = std::variant<int, float>;
-
-    struct ConfigKey
-    {
-        StringId file;
-        StringId section;
-        StringId key;
-
-        friend bool operator==(const ConfigKey&, const ConfigKey&) = default;
-    };
-}
-
-namespace std
-{
-    template <>
-    struct hash<PlainEngine::ConfigKey>
-    {
-        size_t operator()(
-            const PlainEngine::ConfigKey& key) const
-        {
-            size_t seed = 0;
-            PlainEngine::hash_combine(seed, key.file.view());
-            PlainEngine::hash_combine(seed, key.section.view());
-            PlainEngine::hash_combine(seed, key.key.view());
-            return seed;
-        }
-    };
 }
 
 namespace PlainEngine
 {
     struct Config
     {
+        struct Record
+        {
+            StringId name;
+            ConfigValue value;
+        };
+
+        struct Section
+        {
+            const Record* findRecord(StringId recordName) const;
+
+        private:
+            friend struct Config;
+
+            StringId name;
+            std::vector<Record> records;
+        };
+
+        struct FileData
+        {
+            const Section* findSection(StringId sectionName) const;
+
+        private:
+            friend struct Config;
+
+            StringId name;
+            std::vector<Section> sections;
+        };
+
         static Config Read(std::string_view relativeFolderPath);
 
         std::optional<ConfigValue> find(
@@ -50,7 +54,14 @@ namespace PlainEngine
             StringId section,
             StringId key) const;
 
+        void forEachSection(
+            StringId file,
+            std::function<void(StringId, const Section&)> func) const;
+
     private:
-        std::unordered_map<ConfigKey, ConfigValue> _records;
+        static void ParseConfigFile(FileData& file, std::string_view content);
+
+        std::array<FileData, 16> _files{};
+        std::size_t _fileCount = 0;
     };
 }
