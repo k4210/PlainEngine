@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <format>
+#include <functional>
 #include <string_view>
 
 namespace PlainEngine
@@ -81,6 +82,15 @@ consteval PlainEngine::StringId operator""_id(
 
 namespace std
 {
+    template <>
+    struct hash<PlainEngine::StringId>
+    {
+        std::size_t operator()(const PlainEngine::StringId& value) const
+        {
+            return std::hash<std::string_view>{}(value.view());
+        }
+    };
+
     template <>
     struct formatter<PlainEngine::StringId, char>
         : formatter<string_view, char>

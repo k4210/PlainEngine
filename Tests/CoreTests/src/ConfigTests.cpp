@@ -1,5 +1,5 @@
 #include <config.h>
-#include <stringId.h>
+#include "stringId.h"
 
 #include "TestFileHelpers.h"
 

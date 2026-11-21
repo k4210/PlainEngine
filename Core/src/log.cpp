@@ -14,12 +14,19 @@
 #include <format>
 #include <mutex>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 
 namespace PlainEngine
 {
     namespace
     {
+        std::unordered_map<StringId, LogPriority>& GetMinimumPriorities()
+        {
+            static std::unordered_map<StringId, LogPriority> minimumPriorities;
+            return minimumPriorities;
+        }
+
         void WriteOutput(HANDLE handle, bool isConsole, const char* output, std::size_t length)
         {
             std::size_t offset = 0;
@@ -67,6 +74,20 @@ namespace PlainEngine
                 FlushFileBuffers(outputHandle);
             }
         }
+    }
+
+    void LogSettings::minimalPriority(StringId channel, LogPriority priority)
+    {
+        GetMinimumPriorities()[channel] = priority;
+    }
+
+    LogPriority LogSettings::minimalPriority(StringId channel)
+    {
+        const auto& minimumPriorities = GetMinimumPriorities();
+        const auto setting = minimumPriorities.find(channel);
+        return setting == minimumPriorities.end()
+            ? LogPriority::log
+            : setting->second;
     }
 
     std::size_t AppendStackTrace(std::array<char, kLogBufferSize>& output, std::size_t outputLength)

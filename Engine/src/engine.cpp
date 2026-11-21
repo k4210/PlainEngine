@@ -8,5 +8,7 @@ namespace PlainEngine
     {
         _config = Config::Read("config");
         ConsoleVariableManager::Get().useConfig(_config);
+
+
     }
 }

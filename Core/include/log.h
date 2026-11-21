@@ -12,14 +12,14 @@
 #include <intrin.h>
 #include <utility>
 
-#include <stringId.h>
+#include "stringId.h"
 
 namespace PlainEngine
 {
     inline constexpr std::size_t kLogBufferSize = 2048;
     inline constexpr char kLogTruncationMarker[] = "...";
 
-    enum class LogPriority
+	enum class LogPriority : uint8_t
     {
         log,
         info,
@@ -37,6 +37,13 @@ namespace PlainEngine
 
     void WriteLogMessage(LogPriority priority, const char* message, std::size_t length);
 
+    struct LogSettings
+    {
+        // Changing a channel's minimum priority is not thread-safe.
+        static void minimalPriority(StringId channel, LogPriority priority);
+        static LogPriority minimalPriority(StringId channel);
+    };
+
     template <typename... Args>
     void FormatLogMessage(
         StringId channel,
@@ -44,6 +51,9 @@ namespace PlainEngine
         std::format_string<Args...> format,
         Args&&... args)
     {
+        if (priority < LogSettings::minimalPriority(channel))
+            return;
+
         std::array<char, kLogBufferSize> buffer{};
         std::size_t length = AppendLogPrefix(channel, priority, buffer);
         {
